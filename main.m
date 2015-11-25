@@ -27,6 +27,15 @@ function y = positionBloc()
         7 0 5];
 end
 
+function y = normaleSurface()
+    y = [1 0 0;
+        -1 0 0;
+        0 1 0;
+        0 -1 0;
+        0 0 1;
+        0 0 -1];
+end
+
 function y = positionPetitBloc()
     y = [3 3 17;
         3 5 17;
@@ -108,11 +117,23 @@ function y = indiceRefraction(position, direction, option)
     y = [n1 n2];
 end
 
-function y = tracerPoints(position, directions, N, option) 
+function y = isBetweenTwoPoints(point1, point2, point3)
+    y =0;
+    if(point1(1) <= point3(1) && point2(1) >= point3(1))
+        if(point1(2) <= point3(2) && point2(2) >= point3(2))
+             if(point1(3) <= point3(3) && point2(3) >= point3(3))
+                 y = 1;
+             end
+        end
+    end          
+end
+
+
+function y = tracerPoints(position, directions, nombrePoints, option) 
     %directions = tableau de vecteur
     %N fois tracerUneLigne
-    for i = 1:N
-        tracerUneLigne();
+    for i = 1:nombrePoints
+        tracerUneLigne(position, directions(i), option);
     end
 end
 
@@ -131,21 +152,24 @@ function y = tracerUneLigne(position, direction, option)
     
     %calculer collision
     collision = calculerCollision(position, direction);
-    positionCollision = collision(2);
     typeCollision = collision(1);
+    positionCollision = collision(2);
+    normal = collision(3);
     
     %calculer distance
-    distance = calculerdistance()
+    distance = calculerdistance(position, positionCollision);
     
     if(typeCollision == 0)
         angle = calculerAngle2Vecteur(direction, normal);
 
-        n = indiceRefraction(position, direction, option)
+        n = indiceRefraction(position, direction, option);
         critique = verifierAngleCritique(angle, n(1), n(2));
+        %critique = 1 = réflexion
+        %critique = 0 = refraction
         if (critique == 0)
-            nouvelleDirection = calculerDirectionRefraction(angle, n(1), n(2));
+            nouvelleDirection = calculerDirectionRefraction(direction, normal, n(1), n(2));
         else
-            nouvelleDirection = calculerDirectionReflexion(angle, n(1), n(2));
+            nouvelleDirection = calculerDirectionReflexion(direction, normal);
         end
         
         r = tracerUneLigne(positionCollision, nouvelleDirection, option);
@@ -163,6 +187,27 @@ end
 
 function y = calculerCollision(position, direction)
     
+    Bloc = positionBloc();
+    petitBloc = positionPetitBloc();
+    grosseBoite = positionGrosseBoite();
+    for i = 1:4
+        intersection = intersectLinePlane([position position+direction], [Bloc(i,:) Bloc(i+1, :) Bloc(i+4, :)]);
+        if(isBetweenTwoPoints(intersection, Bloc(mod(i+1,4), :), Bloc(i+4,:)) == 1)
+            temp = position1 - position2;
+            x = temp(1)/direction(1);
+            if(x*direction == temp)
+                %x
+                % garder la surface la plus proche (plus petit x positif)
+            end
+        end
+    end
+    % refaire la verification avec 2 faces restantes
+    %trouver le plus petit x > 0
+    % retourner la surface
+    typeCollision = 0;
+    positionCollision = [0 0 0];
+    normalSurface = [0 1 0];
+    y = [typeCollision, positionCollision, normalSurface];
 end
 
 function y = calculerAngle2Vecteur(Vecteur1, Vecteur2)
@@ -170,17 +215,62 @@ function y = calculerAngle2Vecteur(Vecteur1, Vecteur2)
     y = acos(CosTheta);
 end
 
-function y = calculerDirectionRefraction()
-
+function y = calculerDirectionRefraction(direction, normale, n1, n2)
+    % voir slide p48
+    j = cross(direction, normale)/norm(cross(direction, normale));
+    k = cross(normale, j); 
+    s = (n1/n2)*(dot(direction,k)); 
+    dir = -normale * sqrt(1-s^2) + k*s;
+    y = dir/norm(dir); %unitaire
 end
 
-function y = calculerDirectionReflexion()
-
+function y = calculerDirectionReflexion(direction, normale)
+    %voir slide p.35
+    res = directio - 2*dot(direction, normale)*normale; 
+    y = res/norm(res);
 end
 
 function y = verifierAngleCritique(angle, n1, n2)
     %formule AngleCritique
-    
+    sb = sin(angle) * n1 / n2;
+    if(sb > 1)
+        y = 1;
+    else
+        y = 0;  
+    end
     %1 = réflexion
     %0 = refraction
+end
+
+function point = intersectLinePlane(line, plane)
+
+    % unify sizes of data
+    nLines  = size(line, 1);
+    nPlanes = size(plane, 1);
+
+    % N planes and M lines not allowed 
+    if nLines ~= nPlanes && min(nLines, nPlanes) > 1
+        error('MatGeom:geom3d:intersectLinePlane', ...
+            'Input must have same number of rows, or one must be 1');
+    end
+
+    % plane normal
+    n = vectorCross3d(plane(:,4:6), plane(:,7:9));
+
+    % difference between origins of plane and line
+    dp = bsxfun(@minus, plane(:, 1:3), line(:, 1:3));
+
+    % dot product of line direction with plane normal
+    denom = sum(bsxfun(@times, n, line(:,4:6)), 2);
+
+    % relative position of intersection point on line (can be inf in case of a
+    % line parallel to the plane)
+    t = sum(bsxfun(@times, n, dp),2) ./ denom;
+
+    % compute coord of intersection point
+    point = bsxfun(@plus, line(:,1:3),  bsxfun(@times, [t t t], line(:,4:6)));
+
+    % set indices of line and plane which are parallel to NaN
+    par = abs(denom) < tol;
+    point(par,:) = NaN;
 end

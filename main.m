@@ -12,12 +12,100 @@ end
 %identifier les rayons qui atteignent l'objet
 %tracer la position de l'image virtuelle
 
-function y = positionBloc()
-    
+function y = delta()
+    y = 0.01;
 end
 
-function y = indiceRefraction(position, option)
+function y = positionBloc()
+    y =[0 0 20;
+        0 7 20;
+        7 7 20;
+        7 0 20;
+        0 0 5;
+        0 7 5;
+        7 7 5;
+        7 0 5];
+end
+
+function y = positionPetitBloc()
+    y = [3 3 17;
+        3 5 17;
+        4 5 17;
+        4 3 17;
+        3 3 12;
+        3 5 12;
+        4 5 12;
+        4 3 12];
+end
+
+function y = positionGrosseBoite()
+    y = [-30 -30 30;
+        -30 30 30;
+        30 30 30;
+        30 -30 30;
+        -30 -30 -30;
+        -30 30 -30;
+        30 30 -30;
+        30 -30 -30];
+end
+
+function y = indiceRefraction(position, direction, option)
+    posBloc = positionBloc();
     
+%     for i = 1:6
+%         planCourant = posBloc(i);  
+%         vecteurNormal = cross(planCourant(1),planCourant(2));
+%         vecteurNormalUnitaire = vecteurNormal/norm(vecteurNormal);
+%     end
+    
+    % arriere
+    posArriere = [position(1) - delta()*direction(1)
+                  position(2) - delta()*direction(2)
+                  position(3) - delta()*direction(3)];  
+    % devant
+    posDevant = [position(1) + delta()*direction(1)
+                 position(2) + delta()*direction(2)
+                 position(3) + delta()*direction(3)];
+             
+    point1 = posBloc(1, :);
+    point2 = posBloc(7, :);
+    %n1
+    if(option == 1)
+        n1 = 1.0;
+    else
+        n1 = 1.33;
+    end
+    if(point1(1) < posArriere(1) && point2(1) > posArriere(1))
+        if(point1(2) < posArriere(2) && point2(2) > posArriere(2))
+             if(point1(3) < posArriere(3) && point2(3) > posArriere(3))
+                 %interieur
+                 if(option == 1)
+                     n1 = 1.5;
+                 else
+                     n1 = 1.1;
+                 end
+             end
+        end
+    end
+    %n2
+    if(option == 1)
+        n2 = 1.0;
+    else
+        n2= 1.33;
+    end
+    if(point1(1) < posDevant(1) && point2(1) > posDevant(1))
+        if(point1(2) < posDevant(2) && point2(2) > posDevant(2))
+             if(point1(3) < posDevant(3) && point2(3) > posDevant(3))
+                 %interieur
+                 if(option == 1)
+                     n2 = 1.5;
+                 else
+                     n2 = 1.1;
+                 end
+             end
+        end
+    end
+    y = [n1 n2];
 end
 
 function y = tracerPoints(position, directions, N, option) 
@@ -52,12 +140,12 @@ function y = tracerUneLigne(position, direction, option)
     if(typeCollision == 0)
         angle = calculerAngle2Vecteur(direction, normal);
 
-        n1 = indiceRefraction(position, option)
-        critique = verifierAngleCritique(angle, n1, n2);
+        n = indiceRefraction(position, direction, option)
+        critique = verifierAngleCritique(angle, n(1), n(2));
         if (critique == 0)
-            nouvelleDirection = calculerDirectionRefraction(angle, n1, n2);
+            nouvelleDirection = calculerDirectionRefraction(angle, n(1), n(2));
         else
-            nouvelleDirection = calculerDirectionReflexion(angle, n1, n2);
+            nouvelleDirection = calculerDirectionReflexion(angle, n(1), n(2));
         end
         
         r = tracerUneLigne(positionCollision, nouvelleDirection, option);

@@ -78,7 +78,8 @@ function y = calculerCollision(position, direction)
 end
 
 function y = calculerAngle2Vecteur(Vecteur1, Vecteur2)
-
+    CosTheta = dot(Vecteur1,Vecteur2)/(norm(Vecteur1)*norm(Vecteur2));
+    y = acos(CosTheta);
 end
 
 function y = calculerDirectionRefraction()

@@ -150,9 +150,9 @@ function y = tracerPoints(position, directions, nombrePoints, option)
     %N fois tracerUneLigne
     for i = 1:nombrePoints
         hold on
-        detailPoint = tracerUneLigne(position, directions(i), option);
+        detailPoint = tracerUneLigne(position, directions(i, :), option);
         if(detailPoint(1) > 1)
-            point = detailPoint(2)*directions(i) + position;
+            point = detailPoint(2)*directions(i, :) + position;
             scatter3(point(1),point(2),point(3)); %TODO : add color LOL
         end
     end
@@ -174,8 +174,8 @@ function y = tracerUneLigne(position, direction, option)
     %calculer collision
     collision = calculerCollision(position, direction);
     typeCollision = collision(1);
-    positionCollision = collision(2);
-    normal = collision(3);
+    positionCollision = collision(2:4);
+    normal = collision(5:7);
     
     %calculer distance
     distance = calculerdistance(position, positionCollision);
@@ -202,8 +202,9 @@ function y = tracerUneLigne(position, direction, option)
 end
 
 function y = calculerdistance(position1, position2)
-    X = [position1; position2] ;
-    y = pdist(X, 'euclidean');
+    vecteurDistance = position2 - position1;
+    distance = sqrt(vecteurDistance(1)*vecteurDistance(1) + vecteurDistance(2)*vecteurDistance(2) + vecteurDistance(3)*vecteurDistance(3));
+    y = distance;
 end
 
 function y = calculerCollision(position, direction)
@@ -217,10 +218,11 @@ function y = calculerCollision(position, direction)
     typeCollision = 0;
     % check des collisions avec les face laterales des deux blocs
     for i = 1:4
+        
         intersection = intersectLinePlane([position position+direction], [Bloc(i,:) Bloc(i+1, :) Bloc(i+4, :)]);
 
         %intersection avec le bloc de verre (ou de polymere bizzare...)
-        if(isBetweenTwoPoints(intersection, Bloc(mod(i+1,4), :), Bloc(i+4,:)) == 1)
+        if(isBetweenTwoPoints(intersection, Bloc(mod(i,4) + 1, :), Bloc(i+4,:)) == 1)
             temp = intersection - position;
             j=1;
             while(temp(j) ==0 && j < 4)
@@ -242,7 +244,7 @@ function y = calculerCollision(position, direction)
 
         intersectionPetit = intersectLinePlane([position position+direction], [petitBloc(i,:) petitBloc(i+1, :) petitBloc(i+4, :)]);
         %intersection avec le bloc d'acier
-        if(isBetweenTwoPoints(intersection, petitBloc(mod(i+1,4), :), petitBloc(i+4,:)) == 1)
+        if(isBetweenTwoPoints(intersection, petitBloc(mod(i,4) + 1, :), petitBloc(i+4,:)) == 1)
             temp = intersectionPetit - position;
             j=1;
             while(temp(j) ==0 && j < 4)
@@ -393,6 +395,7 @@ end
 
 function point = intersectLinePlane(line, plane)
 
+    tol = 1e-14;
     % unify sizes of data
     nLines  = size(line, 1);
     nPlanes = size(plane, 1);
@@ -423,3 +426,114 @@ function point = intersectLinePlane(line, plane)
     par = abs(denom) < tol;
     point(par,:) = NaN;
 end
+
+function c = vectorCross3d(a,b)
+%VECTORCROSS3D Vector cross product faster than inbuilt MATLAB cross.
+%
+%   C = vectorCross3d(A, B) 
+%   returns the cross product of the 3D vectors A and B, that is: 
+%       C = A x B
+%   A and B must be N-by-3 element vectors. If either A or B is a 1-by-3
+%   row vector, the result C will have the size of the other input and will
+%   be the  concatenation of each row's cross product. 
+%
+%   Example
+%     v1 = [2 0 0];
+%     v2 = [0 3 0];
+%     vectorCross3d(v1, v2)
+%     ans =
+%         0   0   6
+%
+%
+%   Class support for inputs A,B:
+%      float: double, single
+%
+%   See also DOT.
+
+%   Sven Holcombe
+
+% needed_colons = max([3, length(size(a)), length(size(b))]) - 3;
+% tmp_colon = {':'};
+% clnSet = tmp_colon(ones(1, needed_colons));
+% 
+% c = bsxfun(@times, a(:,[2 3 1],clnSet{:}), b(:,[3 1 2],clnSet{:})) - ...
+%     bsxfun(@times, b(:,[2 3 1],clnSet{:}), a(:,[3 1 2],clnSet{:}));
+
+sza = size(a);
+szb = size(b);
+
+% Initialise c to the size of a or b, whichever has more dimensions. If
+% they have the same dimensions, initialise to the larger of the two
+switch sign(numel(sza) - numel(szb))
+    case 1
+        c = zeros(sza);
+    case -1
+        c = zeros(szb);
+    otherwise
+        c = zeros(max(sza, szb));
+end
+
+c(:) =  bsxfun(@times, a(:,[2 3 1],:), b(:,[3 1 2],:)) - ...
+        bsxfun(@times, b(:,[2 3 1],:), a(:,[3 1 2],:));
+end
+
+
+% function [I,check]=plane_line_intersect(n,V0,P0,P1)
+% %plane_line_intersect computes the intersection of a plane and a segment(or
+% %a straight line)
+% % Inputs: 
+% %       n: normal vector of the Plane 
+% %       V0: any point that belongs to the Plane 
+% %       P0: end point 1 of the segment P0P1
+% %       P1:  end point 2 of the segment P0P1
+% %
+% %Outputs:
+% %      I    is the point of interection 
+% %     Check is an indicator:
+% %      0 => disjoint (no intersection)
+% %      1 => the plane intersects P0P1 in the unique point I
+% %      2 => the segment lies in the plane
+% %      3=>the intersection lies outside the segment P0P1
+% %
+% % Example:
+% % Determine the intersection of following the plane x+y+z+3=0 with the segment P0P1:
+% % The plane is represented by the normal vector n=[1 1 1]
+% % and an arbitrary point that lies on the plane, ex: V0=[1 1 -5]
+% % The segment is represented by the following two points
+% % P0=[-5 1 -1]
+% %P1=[1 2 3]   
+% % [I,check]=plane_line_intersect([1 1 1],[1 1 -5],[-5 1 -1],[1 2 3]);
+% 
+% %This function is written by :
+% %                             Nassim Khaled
+% %                             Wayne State University
+% %                             Research Assistant and Phd candidate
+% %If you have any comments or face any problems, please feel free to leave
+% %your comments and i will try to reply to you as fast as possible.
+% 
+% I=[0 0 0];
+% u = P1-P0;
+% w = P0 - V0;
+% D = dot(n,u);
+% N = -dot(n,w);
+% check=0;
+% if abs(D) < 10^-7        % The segment is parallel to plane
+%         if N == 0           % The segment lies in plane
+%             check=2;
+%             return
+%         else
+%             check=0;       %no intersection
+%             return
+%         end
+% end
+% 
+% %compute the intersection parameter
+% sI = N / D;
+% I = P0+ sI.*u;
+% 
+% if (sI < 0 || sI > 1)
+%     check= 3;          %The intersection point  lies outside the segment, so there is no intersection
+% else
+%     check=1;
+% end
+% end

@@ -1,5 +1,21 @@
 function main
     %little matlab fairy with great magic
+    nbreDePoints = 1024;
+    positionInit = [-10 -10 15];
+    % generer les directions
+    largeur = sqrt(7^2 + 7^2) + 1;
+    hauteur = 20 + 1;
+    coinBloc = [-0.5 -0.5 5];    
+    directions = zeros(3);
+    count = 1;
+    for i = 1:sqrt(nbreDePoints)
+        for j = 1:sqrt(nbreDePoints)
+            directions(count, :) =  [coinBloc(1)+largeur/i coinBloc(2)+hauteur/j coinBloc(3)] - positionInit;
+            count = count + 1;
+        end
+    end
+    option = 1;
+    tracerPoints(positionInit, directions, nbreDePoints, option);
 end
 
 
@@ -28,10 +44,10 @@ function y = positionBloc()
 end
 
 function y = normaleSurface()
-    y = [1 0 0;
-        -1 0 0;
-        0 1 0;
+    y = [-1 0 0;
         0 -1 0;
+        1 0 0;
+        0 1 0;
         0 0 1;
         0 0 -1];
 end
@@ -133,7 +149,12 @@ function y = tracerPoints(position, directions, nombrePoints, option)
     %directions = tableau de vecteur
     %N fois tracerUneLigne
     for i = 1:nombrePoints
-        tracerUneLigne(position, directions(i), option);
+        hold on
+        detailPoint = tracerUneLigne(position, directions(i), option);
+        if(detailPoint(1) > 1)
+            point = detailPoint(2)*directions(i) + position;
+            scatter3(point(1),point(2),point(3)); %TODO : add color LOL
+        end
     end
 end
 
@@ -172,12 +193,12 @@ function y = tracerUneLigne(position, direction, option)
             nouvelleDirection = calculerDirectionReflexion(direction, normal);
         end
         
-        r = tracerUneLigne(positionCollision, nouvelleDirection, option);
+        pointCollision = tracerUneLigne(positionCollision, nouvelleDirection, option);
     else
-        r = [typeCollision distance];
+        pointCollision = [typeCollision distance];
     end
     
-    y = [r(1) (r(2)+distance)];
+    y = [pointCollision(1) (pointCollision(2)+distance)];
 end
 
 function y = calculerdistance(position1, position2)
@@ -190,23 +211,151 @@ function y = calculerCollision(position, direction)
     Bloc = positionBloc();
     petitBloc = positionPetitBloc();
     grosseBoite = positionGrosseBoite();
+    vraiIntersection = [0 0 0];
+    minDistance = 1000000000;
+    normalSurface = [0 0 0];
+    typeCollision = 0;
+    % check des collisions avec les face laterales des deux blocs
     for i = 1:4
         intersection = intersectLinePlane([position position+direction], [Bloc(i,:) Bloc(i+1, :) Bloc(i+4, :)]);
+
+        %intersection avec le bloc de verre (ou de polymere bizzare...)
         if(isBetweenTwoPoints(intersection, Bloc(mod(i+1,4), :), Bloc(i+4,:)) == 1)
-            temp = position1 - position2;
-            x = temp(1)/direction(1);
-            if(x*direction == temp)
+            temp = intersection - position;
+            j=1;
+            while(temp(j) ==0 && j < 4)
+                j = j+1;
+            end
+
+            a = temp(j)/direction(j);
+            if(a > 0 && norm(temp) < minDistance)
+                minDistance = norm(temp);
+                vraiIntersection = intersection;
+                normalTemp = normaleSurface();
+                normalSurface = normalTemp(i, :);
+                typeCollision = 1;
+
+                %x
+                % garder la surface la plus proche (plus petit x positif)
+            end
+        end
+
+        intersectionPetit = intersectLinePlane([position position+direction], [petitBloc(i,:) petitBloc(i+1, :) petitBloc(i+4, :)]);
+        %intersection avec le bloc d'acier
+        if(isBetweenTwoPoints(intersection, petitBloc(mod(i+1,4), :), petitBloc(i+4,:)) == 1)
+            temp = intersectionPetit - position;
+            j=1;
+            while(temp(j) ==0 && j < 4)
+                j = j+1;
+            end
+
+            a = temp(j)/direction(j);
+            if(a > 0 && norm(temp) < minDistance)
+                minDistance = norm(temp);
+                vraiIntersection = intersection;
+                normalTemp = normaleSurface();
+                normalSurface = normalTemp(i, :);
+                typeCollision = i + 1;
+
                 %x
                 % garder la surface la plus proche (plus petit x positif)
             end
         end
     end
+
+    % intersection pour les faces superieurs
+    intersection = intersectLinePlane([position position+direction], [Bloc(1,:) Bloc(2, :) Bloc(3, :)]);
+
+    %intersection avec le bloc de verre (ou de polymere bizzare...)
+    if(isBetweenTwoPoints(intersection, Bloc(1, :), Bloc(3,:)) == 1)
+        temp = intersection - position;
+        j=1;
+        while(temp(j) ==0 && j < 4)
+            j = j+1;
+        end
+
+        a = temp(j)/direction(j);
+        if(a > 0 && norm(temp) < minDistance)
+            minDistance = norm(temp);
+            vraiIntersection = intersection;
+            normalTemp = normaleSurface();
+            normalSurface = normalTemp(5, :);
+            typeCollision = 1;
+            %x
+            % garder la surface la plus proche (plus petit x positif)
+        end
+    end
+
+    intersectionPetit = intersectLinePlane([position position+direction], [petitBloc(1,:) petitBloc(2, :) petitBloc(3, :)]);
+    %intersection avec le bloc d'acier
+    if(isBetweenTwoPoints(intersection, petitBloc(1, :), petitBloc(3,:)) == 1)
+        temp = intersectionPetit - position;
+        j=1;
+        while(temp(j) ==0 && j < 4)
+            j = j+1;
+        end
+
+        a = temp(j)/direction(j);
+        if(a > 0 && norm(temp) < minDistance)
+            minDistance = norm(temp);
+            vraiIntersection = intersection;
+            normalTemp = normaleSurface();
+            normalSurface = normalTemp(5, :);
+            typeCollision = 6;
+            %x
+            % garder la surface la plus proche (plus petit x positif)
+        end
+    end
+
+
+    % intersection pour les faces inferieurs
+    intersection = intersectLinePlane([position position+direction], [Bloc(5,:) Bloc(6, :) Bloc(7, :)]);
+
+    %intersection avec le bloc de verre (ou de polymere bizzare...)
+    if(isBetweenTwoPoints(intersection, Bloc(5, :), Bloc(7,:)) == 1)
+        temp = intersection - position;
+        j=1;
+        while(temp(j) ==0 && j < 4)
+            j = j+1;
+        end
+
+        a = temp(j)/direction(j);
+        if(a > 0 && norm(temp) < minDistance)
+            minDistance = norm(temp);
+            vraiIntersection = intersection;
+            normalTemp = normaleSurface();
+            normalSurface = normalTemp(6, :);
+            typeCollision = 1;
+            %x
+            % garder la surface la plus proche (plus petit x positif)
+        end
+    end
+
+    intersectionPetit = intersectLinePlane([position position+direction], [petitBloc(5,:) petitBloc(6, :) petitBloc(7, :)]);
+    %intersection avec le bloc d'acier
+    if(isBetweenTwoPoints(intersection, petitBloc(1, :), petitBloc(3,:)) == 1)
+        temp = intersectionPetit - position;
+        j=1;
+        while(temp(j) ==0 && j < 4)
+            j = j+1;
+        end
+
+        a = temp(j)/direction(j);
+        if(a > 0 && norm(temp) < minDistance)
+            minDistance = norm(temp);
+            vraiIntersection = intersection;
+            normalTemp = normaleSurface();
+            normalSurface = normalTemp(5, :);
+            typeCollision = 7;
+            %x
+            % garder la surface la plus proche (plus petit x positif)
+        end
+    end
+
     % refaire la verification avec 2 faces restantes
     %trouver le plus petit x > 0
     % retourner la surface
-    typeCollision = 0;
-    positionCollision = [0 0 0];
-    normalSurface = [0 1 0];
+    positionCollision = vraiIntersection;
     y = [typeCollision, positionCollision, normalSurface];
 end
 

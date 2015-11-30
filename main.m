@@ -1,7 +1,7 @@
 function main
-    %little matlab fairy with great magic
+%     %little matlab fairy with great magic
     nbreDePoints = 1024;
-    positionInit = [-10 -10 15];
+     positionInit = [-10 -10 15];
     % generer les directions
     largeur = sqrt(7^2 + 7^2) + 1;
     hauteur = 20 + 1;
@@ -16,6 +16,8 @@ function main
     end
     option = 1;
     tracerPoints(positionInit, directions, nbreDePoints, option);
+% direction = [1 1 0];
+% tracerPoints(positionInit, direction, 1, 1);
 end
 
 
@@ -45,9 +47,9 @@ end
 
 function y = normaleSurface()
     y = [-1 0 0;
-        0 -1 0;
-        1 0 0;
         0 1 0;
+        1 0 0;
+        0 -1 0;
         0 0 1;
         0 0 -1];
 end
@@ -135,6 +137,9 @@ end
 
 function y = isBetweenTwoPoints(point1, point2, point3)
     y =0;
+    if(numel(point1)==0)
+        return;
+    end
     if(point1(1) <= point3(1) && point2(1) >= point3(1))
         if(point1(2) <= point3(2) && point2(2) >= point3(2))
              if(point1(3) <= point3(3) && point2(3) >= point3(3))
@@ -180,7 +185,7 @@ function y = tracerUneLigne(position, direction, option)
     %calculer distance
     distance = calculerdistance(position, positionCollision);
     
-    if(typeCollision == 0)
+    if(typeCollision > 0)
         angle = calculerAngle2Vecteur(direction, normal);
 
         n = indiceRefraction(position, direction, option);
@@ -219,13 +224,13 @@ function y = calculerCollision(position, direction)
     % check des collisions avec les face laterales des deux blocs
     for i = 1:4
         
-        intersection = intersectLinePlane([position position+direction], [Bloc(i,:) Bloc(i+1, :) Bloc(i+4, :)]);
+        intersection = intersectLinePlane([position direction], [Bloc(i,:) Bloc(i+1, :) Bloc(i+4, :)]);
 
         %intersection avec le bloc de verre (ou de polymere bizzare...)
         if(isBetweenTwoPoints(intersection, Bloc(mod(i,4) + 1, :), Bloc(i+4,:)) == 1)
             temp = intersection - position;
             j=1;
-            while(temp(j) ==0 && j < 4)
+            while(temp(j) ==0 && j < 3)
                 j = j+1;
             end
 
@@ -242,12 +247,12 @@ function y = calculerCollision(position, direction)
             end
         end
 
-        intersectionPetit = intersectLinePlane([position position+direction], [petitBloc(i,:) petitBloc(i+1, :) petitBloc(i+4, :)]);
+        intersectionPetit = intersectLinePlane([position direction], [petitBloc(i,:) petitBloc(i+1, :) petitBloc(i+4, :)]);
         %intersection avec le bloc d'acier
         if(isBetweenTwoPoints(intersection, petitBloc(mod(i,4) + 1, :), petitBloc(i+4,:)) == 1)
             temp = intersectionPetit - position;
             j=1;
-            while(temp(j) ==0 && j < 4)
+            while(temp(j) ==0 && j < 3)
                 j = j+1;
             end
 
@@ -266,13 +271,13 @@ function y = calculerCollision(position, direction)
     end
 
     % intersection pour les faces superieurs
-    intersection = intersectLinePlane([position position+direction], [Bloc(1,:) Bloc(2, :) Bloc(3, :)]);
+    intersection = intersectLinePlane([position direction], [Bloc(1,:) Bloc(2, :) Bloc(3, :)]);
 
     %intersection avec le bloc de verre (ou de polymere bizzare...)
     if(isBetweenTwoPoints(intersection, Bloc(1, :), Bloc(3,:)) == 1)
         temp = intersection - position;
         j=1;
-        while(temp(j) ==0 && j < 4)
+        while(temp(j) ==0 && j < 3)
             j = j+1;
         end
 
@@ -288,12 +293,12 @@ function y = calculerCollision(position, direction)
         end
     end
 
-    intersectionPetit = intersectLinePlane([position position+direction], [petitBloc(1,:) petitBloc(2, :) petitBloc(3, :)]);
+    intersectionPetit = intersectLinePlane([position direction], [petitBloc(1,:) petitBloc(2, :) petitBloc(3, :)]);
     %intersection avec le bloc d'acier
     if(isBetweenTwoPoints(intersection, petitBloc(1, :), petitBloc(3,:)) == 1)
         temp = intersectionPetit - position;
         j=1;
-        while(temp(j) ==0 && j < 4)
+        while(temp(j) ==0 && j < 3)
             j = j+1;
         end
 
@@ -311,13 +316,13 @@ function y = calculerCollision(position, direction)
 
 
     % intersection pour les faces inferieurs
-    intersection = intersectLinePlane([position position+direction], [Bloc(5,:) Bloc(6, :) Bloc(7, :)]);
+    intersection = intersectLinePlane([position direction], [Bloc(5,:) Bloc(6, :) Bloc(7, :)]);
 
     %intersection avec le bloc de verre (ou de polymere bizzare...)
     if(isBetweenTwoPoints(intersection, Bloc(5, :), Bloc(7,:)) == 1)
         temp = intersection - position;
         j=1;
-        while(temp(j) ==0 && j < 4)
+        while(temp(j) ==0 && j < 3)
             j = j+1;
         end
 
@@ -333,12 +338,12 @@ function y = calculerCollision(position, direction)
         end
     end
 
-    intersectionPetit = intersectLinePlane([position position+direction], [petitBloc(5,:) petitBloc(6, :) petitBloc(7, :)]);
+    intersectionPetit = intersectLinePlane([position direction], [petitBloc(5,:) petitBloc(6, :) petitBloc(7, :)]);
     %intersection avec le bloc d'acier
     if(isBetweenTwoPoints(intersection, petitBloc(1, :), petitBloc(3,:)) == 1)
         temp = intersectionPetit - position;
         j=1;
-        while(temp(j) ==0 && j < 4)
+        while(temp(j) ==0 && j < 3)
             j = j+1;
         end
 
@@ -377,7 +382,7 @@ end
 
 function y = calculerDirectionReflexion(direction, normale)
     %voir slide p.35
-    res = directio - 2*dot(direction, normale)*normale; 
+    res = direction - 2*dot(direction, normale)*normale; 
     y = res/norm(res);
 end
 
@@ -394,37 +399,57 @@ function y = verifierAngleCritique(angle, n1, n2)
 end
 
 function point = intersectLinePlane(line, plane)
+%trouver vecteur correspondant au plan a laide de ses points
+temp1 = plane(:, 4:6)-plane(:,1:3);
+temp2 = plane(:, 7:9) - plane(:,1:3);
 
-    tol = 1e-14;
-    % unify sizes of data
-    nLines  = size(line, 1);
-    nPlanes = size(plane, 1);
+plane(:,4:6) = temp1;
+plane(:,7:9) = temp2;
 
-    % N planes and M lines not allowed 
-    if nLines ~= nPlanes && min(nLines, nPlanes) > 1
-        error('MatGeom:geom3d:intersectLinePlane', ...
-            'Input must have same number of rows, or one must be 1');
-    end
+n = vectorCross3d(plane(:,4:6), plane(:,7:9));
 
-    % plane normal
-    n = vectorCross3d(plane(:,4:6), plane(:,7:9));
-
-    % difference between origins of plane and line
-    dp = bsxfun(@minus, plane(:, 1:3), line(:, 1:3));
-
-    % dot product of line direction with plane normal
-    denom = sum(bsxfun(@times, n, line(:,4:6)), 2);
-
-    % relative position of intersection point on line (can be inf in case of a
-    % line parallel to the plane)
-    t = sum(bsxfun(@times, n, dp),2) ./ denom;
-
-    % compute coord of intersection point
-    point = bsxfun(@plus, line(:,1:3),  bsxfun(@times, [t t t], line(:,4:6)));
-
-    % set indices of line and plane which are parallel to NaN
-    par = abs(denom) < tol;
-    point(par,:) = NaN;
+if(dot(n,line(:,4:6)) ~= 0)
+    syms d;
+    equationD = n(1)*plane(:,1) + n(2)*plane(:,2) + n(3)*plane(:,3) + d == 0;
+    solutionD = solve(equationD,d);
+    
+    syms t;
+    equationT = n(1)*(line(:,1) + line(:,4)*t) + n(2)*(line(:,2) + line(:,5)*t) + n(3)*(line(:,3) + line(:,6)*t) + solutionD == 0;
+    solutionT = solve(equationT, t);
+    
+    point = [0 0 0];
+    point(1) = line(:,1) + line(:,4)*solutionT;
+    point(2) = line(:,2) + line(:,5)*solutionT;
+    point(3) = line(:,3) + line(:,6)*solutionT;
+else
+    point = [];
+end
+%     tol = 1e-14; % unify sizes of data nLines  = size(line, 1); nPlanes =
+%     size(plane, 1);
+% 
+%     % N planes and M lines not allowed if nLines ~= nPlanes &&
+%     min(nLines, nPlanes) > 1
+%         error('MatGeom:geom3d:intersectLinePlane', ...
+%             'Input must have same number of rows, or one must be 1');
+%     end
+% 
+%     % plane normal n = vectorCross3d(plane(:,4:6), plane(:,7:9));
+% 
+%     % difference between origins of plane and line dp = bsxfun(@minus,
+%     plane(:, 1:3), line(:, 1:3));
+% 
+%     % dot product of line direction with plane normal denom =
+%     sum(bsxfun(@times, n, line(:,4:6)), 2);
+% 
+%     % relative position of intersection point on line (can be inf in case
+%     of a % line parallel to the plane) t = sum(bsxfun(@times, n, dp),2)
+%     ./ denom;
+% 
+%     % compute coord of intersection point point = bsxfun(@plus,
+%     line(:,1:3),  bsxfun(@times, [t t t], line(:,4:6)));
+% 
+%     % set indices of line and plane which are parallel to NaN par =
+%     abs(denom) < tol; point(par,:) = NaN;
 end
 
 function c = vectorCross3d(a,b)

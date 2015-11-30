@@ -1,32 +1,72 @@
+% pistes:
+%- verifier qu'on commence chaque iteration recursif au bon point
+%- verifier qu'on "avance" dans la bonne direction
+% IL Y A TROP DE REFLEXION WHUT
+
 function main
 %     %little matlab fairy with great magic
-    nbreDePoints = 1024;
+     nbreDePoints = 10;
+     
+     % simulation 1
      positionInit = [-10 -10 15];
+     
     % generer les directions
-    largeur = sqrt(7^2 + 7^2) + 1;
-    hauteur = 20 + 1;
-    coinBloc = [-0.5 -0.5 5];    
+    coinBloc = [0 0 5];    
     directions = zeros(3);
     count = 1;
-    for i = 1:sqrt(nbreDePoints)
-        for j = 1:sqrt(nbreDePoints)
-            directions(count, :) =  [coinBloc(1)+largeur/i coinBloc(2)+hauteur/j coinBloc(3)] - positionInit;
-            directions(count, :) = directions(count, :) / norm(directions(count, :));
-            count = count + 1;
+    incrementX = 7 / nbreDePoints;
+    incrementY = 7 / nbreDePoints;
+    incrementZ = 15 / nbreDePoints;
+    for i = 1:nbreDePoints
+        for j = 1:nbreDePoints
+            for k = 1:nbreDePoints
+                directions(count, :) = [coinBloc(1)+i*incrementX coinBloc(2)+j*incrementY  coinBloc(3)+k*incrementZ]- positionInit;
+                directions(count, :) = directions(count, :) / norm(directions(count, :));
+                count = count + 1;
+            end
         end
     end
     option = 1;
     tracerPoints(positionInit, directions, nbreDePoints, option);
-% direction = [1 1 0];
-% tracerPoints(positionInit, direction, 1, 1);
+    
+%      % simulation 3
+%      option = 2;
+%      tracerPoints(positionInit, directions, nbreDePoints, option);
+%     
+%      % simulation 2
+%      positionInit = [13 10 25];
+%      
+%     % generer les directions
+%     coinBloc = [0 0 5];    
+%     directions = zeros(3);
+%     count = 1;
+%     incrementX = 7 / nbreDePoints;
+%     incrementY = 7 / nbreDePoints;
+%     incrementZ = 15 / nbreDePoints;
+%     for i = 1:nbreDePoints
+%         for j = 1:nbreDePoints
+%             for k = 1:nbreDePoints
+%                 directions(count, :) = [coinBloc(1)+i*incrementX coinBloc(2)+j*incrementY  coinBloc(3)+k*incrementZ]- positionInit;
+%                 directions(count, :) = directions(count, :) / norm(directions(count, :));
+%                 count = count + 1;
+%             end
+%         end
+%     end
+%     option = 1;
+%     tracerPoints(positionInit, directions, nbreDePoints, option);
+%     
+%     % simulation 4
+%     option = 2;
+%     tracerPoints(positionInit, directions, nbreDePoints, option);
+   
 end
 
 
 
-    function drawBigCube
+function drawBigCube
      A = [0 0 5];%[0 0 0];
      B = [7 0 5];%[1 0 0];
-     C = [0 7 5]%[0 1 0];
+     C = [0 7 5];%[0 1 0];
      D = [0 0 20];%[0 0 1];
      E = [0 7 20];%[0 1 1];
      F = [7 0 20];%[1 0 1];
@@ -35,8 +75,8 @@ end
      P = [A;B;F;H;G;C;A;D;E;H;F;D;E;C;G;B];
      h = plot3(P(:,1),P(:,2),P(:,3))
      h.Color = 'black';
-     axis equal
-    end
+     axis([-30, 30, -30, 30, -30, 30]);
+end
 
 
 
@@ -113,17 +153,17 @@ function y = indiceRefraction(position, direction, option)
                  position(2) + delta()*direction(2)
                  position(3) + delta()*direction(3)];
              
-    point1 = posBloc(1, :);
-    point2 = posBloc(7, :);
+    min = posBloc(5, :);
+    max = posBloc(3, :);
     %n1
     if(option == 1)
         n1 = 1.0;
     else
         n1 = 1.33;
     end
-    if(point1(1) < posArriere(1) && point2(1) > posArriere(1))
-        if(point1(2) < posArriere(2) && point2(2) > posArriere(2))
-             if(point1(3) < posArriere(3) && point2(3) > posArriere(3))
+    if(min(1) < posArriere(1) && max(1) > posArriere(1))
+        if(min(2) < posArriere(2) && max(2) > posArriere(2))
+             if(min(3) < posArriere(3) && max(3) > posArriere(3))
                  %interieur
                  if(option == 1)
                      n1 = 1.5;
@@ -139,9 +179,9 @@ function y = indiceRefraction(position, direction, option)
     else
         n2= 1.33;
     end
-    if(point1(1) < posDevant(1) && point2(1) > posDevant(1))
-        if(point1(2) < posDevant(2) && point2(2) > posDevant(2))
-             if(point1(3) < posDevant(3) && point2(3) > posDevant(3))
+    if(min(1) < posDevant(1) && max(1) > posDevant(1))
+        if(min(2) < posDevant(2) && max(2) > posDevant(2))
+             if(min(3) < posDevant(3) && max(3) > posDevant(3))
                  %interieur
                  if(option == 1)
                      n2 = 1.5;
@@ -159,9 +199,18 @@ function y = isBetweenTwoPoints(point1, point2, point3)
     if(numel(point1)==0)
         return;
     end
-    if(point1(1) <= point3(1) && point2(1) >= point3(1))
-        if(point1(2) <= point3(2) && point2(2) >= point3(2))
-             if(point1(3) <= point3(3) && point2(3) >= point3(3))
+    max = point3;
+    min = point2;
+    for i = 1:3
+        if(point2(i) > point3(i))
+            max(i) = point2(i);
+            min(i) = point3(i);
+        end
+    end
+    
+    if(point1(1) <= max(1) && point1(1) >= min(1))
+        if(point1(2) <= max(2) && point1(2) >= min(2))
+             if(point1(3) <= max(3) && point1(3) >= min(3))
                  y = 1;
              end
         end
@@ -175,49 +224,50 @@ function y = tracerPoints(position, directions, nombrePoints, option)
     hold on
     scatter3(position(1),position(2),position(3));
     drawBigCube();
-    for i = 1:nombrePoints
+    for i = 1:(nombrePoints*nombrePoints*nombrePoints)
+        fprintf('\n-----\nTrace de la ligne %i\n', i);
         detailPoint = tracerUneLigne(position, directions(i, :), option);
         if(detailPoint(1) > 1)
             point = detailPoint(2)*directions(i, :) + position;
-            scatter3(point(1),point(2),point(3),1,getColor(detailPoint(1))); %TODO : add color LOL
+            scatter3(point(1),point(2),point(3),5,getColor(detailPoint(1))); %TODO : add color LOL
         end
     end
 end
 
 function y = getColor(noSurface)
 
-%     switch(noSurface)
-%         case 2
-%             y = [255 0 0];
-%         case 3
-%             y = [255 255 0];
-%         case 4
-%             y = [0 255 255];
-%         case 5
-%             y = [0 255 0];
-%         case 6
-%             y = [255 0 255];
-%         case 7
-%             y = [0 0 255];
-%         otherwise
-%             y = [0 0 0];
-%     end
     switch(noSurface)
         case 2
-            y = 'red';
+            y = [1 0 0];
         case 3
-            y = 'yellow';
+            y = [1 1 0];
         case 4
-            y = 'cyan';
+            y = [0 1 1];
         case 5
-            y = 'green';
+            y = [0 1 0];
         case 6
-            y = 'pink';
+            y = [1 0 1];
         case 7
-            y = 'blue';
+            y = [0 0 1];
         otherwise
-            y = 'black';
+            y = [0 0 0];
     end
+%     switch(noSurface)
+%         case 2
+%             y = 'red';
+%         case 3
+%             y = 'yellow';
+%         case 4
+%             y = 'cyan';
+%         case 5
+%             y = 'green';
+%         case 6
+%             y = 'pink';
+%         case 7
+%             y = 'blue';
+%         otherwise
+%             y = 'black';
+%       end
 end
 %par de la position dans la direction
 %calcule le point de collision
@@ -244,18 +294,25 @@ function y = tracerUneLigne(position, direction, option)
     if(typeCollision == 1)
         angle = calculerAngle2Vecteur(direction, normal);
 
-        n = indiceRefraction(position, direction, option);
+        n = indiceRefraction(positionCollision, direction, option);
         critique = verifierAngleCritique(angle, n(1), n(2));
         %critique = 1 = réflexion
         %critique = 0 = refraction
         if (critique == 0)
+            fprintf('nouvelle refraction\n');
             nouvelleDirection = calculerDirectionRefraction(direction, normal, n(1), n(2));
-        else
+        elseif (critique == 1)
+            fprintf('nouvelle reflexion\n');
             nouvelleDirection = calculerDirectionReflexion(direction, normal);
+        else
+            %ne devrait pas arriver
+            y = [0 distance];
+            return;
         end
         
         pointCollision = tracerUneLigne(positionCollision, nouvelleDirection, option);
     else
+        fprintf('fin du trace\n');
         pointCollision = [typeCollision distance];
     end
     
@@ -305,7 +362,7 @@ function y = calculerCollision(position, direction)
 
         intersectionPetit = intersectLinePlane([position direction], [petitBloc(i,:) petitBloc(i+1, :) petitBloc(i+4, :)]);
         %intersection avec le bloc d'acier
-        if(isBetweenTwoPoints(intersection, petitBloc(mod(i,4) + 1, :), petitBloc(i+4,:)) == 1)
+        if(isBetweenTwoPoints(intersectionPetit, petitBloc(mod(i,4) + 1, :), petitBloc(i+4,:)) == 1)
             temp = intersectionPetit - position;
             j=1;
             while(temp(j) ==0 && j < 3)
@@ -351,7 +408,7 @@ function y = calculerCollision(position, direction)
 
     intersectionPetit = intersectLinePlane([position direction], [petitBloc(1,:) petitBloc(2, :) petitBloc(3, :)]);
     %intersection avec le bloc d'acier
-    if(isBetweenTwoPoints(intersection, petitBloc(1, :), petitBloc(3,:)) == 1)
+    if(isBetweenTwoPoints(intersectionPetit, petitBloc(1, :), petitBloc(3,:)) == 1)
         temp = intersectionPetit - position;
         j=1;
         while(temp(j) ==0 && j < 3)
@@ -396,7 +453,7 @@ function y = calculerCollision(position, direction)
 
     intersectionPetit = intersectLinePlane([position direction], [petitBloc(5,:) petitBloc(6, :) petitBloc(7, :)]);
     %intersection avec le bloc d'acier
-    if(isBetweenTwoPoints(intersection, petitBloc(1, :), petitBloc(3,:)) == 1)
+    if(isBetweenTwoPoints(intersectionPetit, petitBloc(1, :), petitBloc(3,:)) == 1)
         temp = intersectionPetit - position;
         j=1;
         while(temp(j) ==0 && j < 3)
@@ -447,9 +504,13 @@ function y = verifierAngleCritique(angle, n1, n2)
     sb = sin(angle) * n1 / n2;
     if(sb > 1)
         y = 1;
+    elseif(sb < 1)
+        y = 0; 
     else
-        y = 0;  
+        y =-1;
+        fprintf('paraleleleleleel');
     end
+    %-1 = parallele
     %1 = réflexion
     %0 = refraction
 end
@@ -508,6 +569,7 @@ t = sum(bsxfun(@times, n, dp),2) ./ denom;
 % compute coord of intersection point
 point = bsxfun(@plus, line(:,1:3),  bsxfun(@times, [t t t], line(:,4:6)));
 
+point = round(point,1);
 % set indices of line and plane which are parallel to NaN
 par = abs(denom) < tol;
 point(par,:) = NaN;

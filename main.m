@@ -11,6 +11,7 @@ function main
     for i = 1:sqrt(nbreDePoints)
         for j = 1:sqrt(nbreDePoints)
             directions(count, :) =  [coinBloc(1)+largeur/i coinBloc(2)+hauteur/j coinBloc(3)] - positionInit;
+            directions(count, :) = directions(count, :) / norm(directions(count, :));
             count = count + 1;
         end
     end
@@ -19,6 +20,24 @@ function main
 % direction = [1 1 0];
 % tracerPoints(positionInit, direction, 1, 1);
 end
+
+
+
+    function drawBigCube
+     A = [0 0 5];%[0 0 0];
+     B = [7 0 5];%[1 0 0];
+     C = [0 7 5]%[0 1 0];
+     D = [0 0 20];%[0 0 1];
+     E = [0 7 20];%[0 1 1];
+     F = [7 0 20];%[1 0 1];
+     G = [7 7 5];%[1 1 0];
+     H = [7 7 20];%[1 1 1];
+     P = [A;B;F;H;G;C;A;D;E;H;F;D;E;C;G;B];
+     h = plot3(P(:,1),P(:,2),P(:,3))
+     h.Color = 'black';
+     axis equal
+    end
+
 
 
 
@@ -153,16 +172,53 @@ end
 function y = tracerPoints(position, directions, nombrePoints, option) 
     %directions = tableau de vecteur
     %N fois tracerUneLigne
+    hold on
+    scatter3(position(1),position(2),position(3));
+    drawBigCube();
     for i = 1:nombrePoints
-        hold on
         detailPoint = tracerUneLigne(position, directions(i, :), option);
         if(detailPoint(1) > 1)
             point = detailPoint(2)*directions(i, :) + position;
-            scatter3(point(1),point(2),point(3)); %TODO : add color LOL
+            scatter3(point(1),point(2),point(3),1,getColor(detailPoint(1))); %TODO : add color LOL
         end
     end
 end
 
+function y = getColor(noSurface)
+
+%     switch(noSurface)
+%         case 2
+%             y = [255 0 0];
+%         case 3
+%             y = [255 255 0];
+%         case 4
+%             y = [0 255 255];
+%         case 5
+%             y = [0 255 0];
+%         case 6
+%             y = [255 0 255];
+%         case 7
+%             y = [0 0 255];
+%         otherwise
+%             y = [0 0 0];
+%     end
+    switch(noSurface)
+        case 2
+            y = 'red';
+        case 3
+            y = 'yellow';
+        case 4
+            y = 'cyan';
+        case 5
+            y = 'green';
+        case 6
+            y = 'pink';
+        case 7
+            y = 'blue';
+        otherwise
+            y = 'black';
+    end
+end
 %par de la position dans la direction
 %calcule le point de collision
 %calcule la distance
@@ -185,7 +241,7 @@ function y = tracerUneLigne(position, direction, option)
     %calculer distance
     distance = calculerdistance(position, positionCollision);
     
-    if(typeCollision > 0)
+    if(typeCollision == 1)
         angle = calculerAngle2Vecteur(direction, normal);
 
         n = indiceRefraction(position, direction, option);
@@ -406,50 +462,55 @@ temp2 = plane(:, 7:9) - plane(:,1:3);
 plane(:,4:6) = temp1;
 plane(:,7:9) = temp2;
 
+% n = vectorCross3d(plane(:,4:6), plane(:,7:9));
+% 
+% if(dot(n,line(:,4:6)) ~= 0)
+%     syms d;
+%     equationD = n(1)*plane(:,1) + n(2)*plane(:,2) + n(3)*plane(:,3) + d == 0;
+%     solutionD = solve(equationD,d);
+%     
+%     syms t;
+%     equationT = n(1)*(line(:,1) + line(:,4)*t) + n(2)*(line(:,2) + line(:,5)*t) + n(3)*(line(:,3) + line(:,6)*t) + solutionD == 0;
+%     solutionT = solve(equationT, t);
+%     
+%     point = [0 0 0];
+%     point(1) = line(:,1) + line(:,4)*solutionT;
+%     point(2) = line(:,2) + line(:,5)*solutionT;
+%     point(3) = line(:,3) + line(:,6)*solutionT;
+% else
+%     point = [];
+% end
+   tol = 1e-14;
+
+% unify sizes of data
+nLines  = size(line, 1);
+nPlanes = size(plane, 1);
+
+% N planes and M lines not allowed 
+if nLines ~= nPlanes && min(nLines, nPlanes) > 1
+    error('MatGeom:geom3d:intersectLinePlane', ...
+        'Input must have same number of rows, or one must be 1');
+end
+
+% plane normal
 n = vectorCross3d(plane(:,4:6), plane(:,7:9));
 
-if(dot(n,line(:,4:6)) ~= 0)
-    syms d;
-    equationD = n(1)*plane(:,1) + n(2)*plane(:,2) + n(3)*plane(:,3) + d == 0;
-    solutionD = solve(equationD,d);
-    
-    syms t;
-    equationT = n(1)*(line(:,1) + line(:,4)*t) + n(2)*(line(:,2) + line(:,5)*t) + n(3)*(line(:,3) + line(:,6)*t) + solutionD == 0;
-    solutionT = solve(equationT, t);
-    
-    point = [0 0 0];
-    point(1) = line(:,1) + line(:,4)*solutionT;
-    point(2) = line(:,2) + line(:,5)*solutionT;
-    point(3) = line(:,3) + line(:,6)*solutionT;
-else
-    point = [];
-end
-%     tol = 1e-14; % unify sizes of data nLines  = size(line, 1); nPlanes =
-%     size(plane, 1);
-% 
-%     % N planes and M lines not allowed if nLines ~= nPlanes &&
-%     min(nLines, nPlanes) > 1
-%         error('MatGeom:geom3d:intersectLinePlane', ...
-%             'Input must have same number of rows, or one must be 1');
-%     end
-% 
-%     % plane normal n = vectorCross3d(plane(:,4:6), plane(:,7:9));
-% 
-%     % difference between origins of plane and line dp = bsxfun(@minus,
-%     plane(:, 1:3), line(:, 1:3));
-% 
-%     % dot product of line direction with plane normal denom =
-%     sum(bsxfun(@times, n, line(:,4:6)), 2);
-% 
-%     % relative position of intersection point on line (can be inf in case
-%     of a % line parallel to the plane) t = sum(bsxfun(@times, n, dp),2)
-%     ./ denom;
-% 
-%     % compute coord of intersection point point = bsxfun(@plus,
-%     line(:,1:3),  bsxfun(@times, [t t t], line(:,4:6)));
-% 
-%     % set indices of line and plane which are parallel to NaN par =
-%     abs(denom) < tol; point(par,:) = NaN;
+% difference between origins of plane and line
+dp = bsxfun(@minus, plane(:, 1:3), line(:, 1:3));
+
+% dot product of line direction with plane normal
+denom = sum(bsxfun(@times, n, line(:,4:6)), 2);
+
+% relative position of intersection point on line (can be inf in case of a
+% line parallel to the plane)
+t = sum(bsxfun(@times, n, dp),2) ./ denom;
+
+% compute coord of intersection point
+point = bsxfun(@plus, line(:,1:3),  bsxfun(@times, [t t t], line(:,4:6)));
+
+% set indices of line and plane which are parallel to NaN
+par = abs(denom) < tol;
+point(par,:) = NaN;
 end
 
 function c = vectorCross3d(a,b)

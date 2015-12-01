@@ -1,48 +1,31 @@
-% pistes:
-%- verifier qu'on commence chaque iteration recursif au bon point
-%- verifier qu'on "avance" dans la bonne direction
-% IL Y A TROP DE REFLEXION WHUT
-
 function main
      %little matlab fairy with great magic
-     nbreDePoints = 20;
-     
-     % simulation 1
-%      positionInit = [-10 -10 15];
-     
+
+    % simulation 1
+    positionInit = [-10 -10 15];
+    option = 1;
+
+%     % simulation 2
+%     positionInit = [13 10 25];
+%     option = 1;
+
+%     % simulation 3
+%     positionInit = [-10 -10 15];
+%     option = 2;
+    
+%     % simulation 4
+%     positionInit = [13 10 25];
+%     option = 2;
+
     % generer les directions
+    nbreDePoints = 30;
     coinBloc = [-2 -2 1];    
     directions = zeros(3);
     count = 1;
     incrementX = 11 / nbreDePoints;
     incrementY = 11 / nbreDePoints;
     incrementZ = 23 / (nbreDePoints*2);
-%     for i = 1:nbreDePoints
-%         for j = 1:nbreDePoints
-%             for k = 1:(2*nbreDePoints)
-%                 directions(count, :) = [coinBloc(1)+i*incrementX coinBloc(2)+j*incrementY  coinBloc(3)+k*incrementZ]- positionInit;
-%                 directions(count, :) = directions(count, :) / norm(directions(count, :));
-%                 count = count + 1;
-%             end
-%         end
-%     end
-%     option = 1;
-%     tracerPoints(positionInit, directions, nbreDePoints, option);
     
-%      % simulation 3
-      %option = 2;
-      %tracerPoints(positionInit, directions, nbreDePoints, option);
-%     
-%      % simulation 2
-      positionInit = [13 10 25];
-%      
-%     % generer les directions
-%     coinBloc = [0 0 5];    
-%     directions = zeros(3);
-%     count = 1;
-%     incrementX = 7 / nbreDePoints;
-%     incrementY = 7 / nbreDePoints;
-%     incrementZ = 15 / nbreDePoints;
     for i = 1:nbreDePoints
         for j = 1:nbreDePoints
             for k = 1:(2*nbreDePoints)
@@ -52,13 +35,7 @@ function main
             end
         end
     end
-    %option = 1;
-    %tracerPoints(positionInit, directions, nbreDePoints, option);
-%     
-%     % simulation 4
-     option = 2;
-     tracerPoints(positionInit, directions, nbreDePoints, option);
-   
+    tracerPoints(positionInit, directions, nbreDePoints, option);   
 end
 
 %varaibel global
@@ -247,12 +224,15 @@ function tracerPoints(position, directions, nombrePoints, option)
     %drawBigCube();
     total = nombrePoints*nombrePoints*2*nombrePoints;
     for i = 1:total
-        fprintf('\n\n\n\n\n\n\n\n\n\n\n\n\n\nDrawing...\n%5.2f %%\n', (i/total)*100);
+        clc();
+        fprintf('Drawing...\n%5.2f %%\n', (i/total)*100);
+        
         setGlobalpremier(1); %premiere iteration pour le prochain rayon
         detailPoint = tracerUneLigne(position, directions(i, :), option);
         if(detailPoint(1) > 1)
             point = detailPoint(2)*directions(i, :) + position;
-            scatter3(point(1),point(2),point(3),20,getColor(detailPoint(1)),'filled'); %TODO : add color LOL
+            scatter3(point(1),point(2),point(3),10,getColor(detailPoint(1)),'filled'); %TODO : add color LOL
+            %fprintf('color %i', detailPoint(1));
         end
     end
     axis([-30, 30, -30, 30, -30, 30]);
